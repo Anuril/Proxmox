@@ -36,14 +36,14 @@ class Admin extends \Api_Abstract
         // Retrieve all servers from the database
         $servers = $this->di['db']->find('service_proxmox_server');
         $servers_grouped = array();
-    
+
         // Iterate through each server
         foreach ($servers as $server) {
             // Find all virtual machines (VMs) on this server and calculate CPU cores and RAM usage
             $vms = $this->di['db']->find('service_proxmox', 'server_id=:id', array(':id' => $server->id));
             $server_cpu_cores = 0;
             $server_ram = 0;
-    
+
             // Count the number of VMs
             $vm_count = 0;
             foreach ($vms as $vm) {
@@ -52,23 +52,23 @@ class Admin extends \Api_Abstract
                 $server_ram += $vm->ram;
                 $vm_count++;
             }
-    
+
             // Calculate the percentage of RAM usage if the server's RAM is not zero
             if ($server->ram != 0) {
                 $server_ram_percent = round($server_ram / $server->ram * 100, 0, PHP_ROUND_HALF_DOWN);
             } else {
                 $server_ram_percent = 0;
             }
-    
+
             // Retrieve the overprovisioning factor from the extension's configuration and calculate overprovisioned CPU cores
             $config = $this->di['mod_config']('Serviceproxmox');
             $overprovion_percent = $config['cpu_overprovisioning'];
             $cpu_cores_overprovision = $server->cpu_cores + round($server->cpu_cores * $overprovion_percent / 100, 0, PHP_ROUND_HALF_DOWN);
-    
+
             // Retrieve the RAM overprovisioning factor from the extension's configuration and calculate overprovisioned RAM
             $ram_overprovion_percent = $config['ram_overprovisioning'];
             $ram_overprovision = round($server->ram / 1024 / 1024 / 1024, 0, PHP_ROUND_HALF_DOWN) + round(round($server->ram / 1024 / 1024 / 1024, 0, PHP_ROUND_HALF_DOWN) * $ram_overprovion_percent / 100, 0, PHP_ROUND_HALF_DOWN);
-    
+
             // Store the server's group information in the grouped servers array
             $servers_grouped[$server['group']]['group'] = $server->group;
 
@@ -267,7 +267,7 @@ class Admin extends \Api_Abstract
      */
     public function servers_in_group($data)
     {
-        $sql = "SELECT * FROM `service_proxmox_server` WHERE `group` = '" . $data['group']. "' AND `active` = 1";
+        $sql = "SELECT * FROM `service_proxmox_server` WHERE `group` = '" . $data['group'] . "' AND `active` = 1";
 
         $servers = $this->di['db']->getAll($sql);
 
@@ -346,7 +346,6 @@ class Admin extends \Api_Abstract
             return strcmp($a->headline, $b->headline);
         });
         return $lxc_appliance;
-
     }
 
     // Function to get list of lxc config templates
@@ -492,7 +491,7 @@ class Admin extends \Api_Abstract
         $server->active           = $data['active'];
         $server->created_at       = date('Y-m-d H:i:s');
         $server->updated_at       = date('Y-m-d H:i:s');
-        
+
         $this->di['db']->store($server);
 
         $this->di['logger']->info('Update Proxmox server %s', $server->id);
@@ -716,7 +715,7 @@ class Admin extends \Api_Abstract
         }
     }
 
-    
+
     /**
      * Get all available templates from any proxmox server
      * 
@@ -732,7 +731,7 @@ class Admin extends \Api_Abstract
             // check if the appliance already exists
             //$appliance = $this->di['db']->findOne('service_proxmox_lxc_appliance', 'sha512sum=:sha512sum', array(':sha512sum' => $appliance['sha512sum']));
             // if the appliance exists, update it, otherwise create it
-            
+
             $template = $this->di['db']->dispense('service_proxmox_lxc_appliance');
             $template->headline = $appliance['headline'];
             $template->package = $appliance['package'];
@@ -795,7 +794,7 @@ class Admin extends \Api_Abstract
         return $output;
     }
 
-    
+
     /**
      * Update a storage with storageclasses
      * TODO: Implement & Fix functionality
@@ -838,7 +837,7 @@ class Admin extends \Api_Abstract
             'show_stock'    => 'Stock display (Show Stock) is missing',
             'server'        => 'Server is missing',
             'virt'          => 'Virtualization type is missing',
-            
+
         );
 
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
@@ -860,8 +859,8 @@ class Admin extends \Api_Abstract
             'virt'          => $data['virt'],
             'server'        => $data['server'],
             'lxc-templ'     => $data['lxc-templ'],
-            'vm-templ'      => $data['vm-templ'],  
-            'vmconftempl' => $data['vmconftempl'],          
+            'vm-templ'      => $data['vm-templ'],
+            'vmconftempl' => $data['vmconftempl'],
         );
 
         $product->config         = json_encode($config);
@@ -982,9 +981,6 @@ class Admin extends \Api_Abstract
         );
 
         return $output;
-
-
-
     }
 
     /**
@@ -1027,7 +1023,6 @@ class Admin extends \Api_Abstract
         );
 
         return $output;
-    
     }
 
 
@@ -1063,7 +1058,7 @@ class Admin extends \Api_Abstract
         $vlan = $this->di['db']->findOne('service_proxmox_client_vlan', 'id=:id', array(':id' => $data['id']));
         if (!$vlan) {
             throw new \Box_Exception('VLAN not found');
-        } 
+        }
 
         // fill client_name field
         $client = $this->di['db']->findOne('client', 'id=:id', array(':id' => $vlan->client_id));
@@ -1076,7 +1071,7 @@ class Admin extends \Api_Abstract
         $output = array(
             'id'            => $vlan->id,
             'client_id'     => $vlan->client_id,
-            'client_name'   => $client->first_name." ".$client->last_name,
+            'client_name'   => $client->first_name . " " . $client->last_name,
             'vlan'          => $vlan->vlan,
             'ip_range'      => $vlan->ip_range,
             'cidr'          => $iprange->cidr,
@@ -1085,7 +1080,6 @@ class Admin extends \Api_Abstract
         );
 
         return $output;
-
     }
 
 
@@ -1127,7 +1121,7 @@ class Admin extends \Api_Abstract
         $vm_config_template->updated_at = date('Y-m-d H:i:s'); */
         $this->di['db']->store($vm_config_template);
 
-        
+
         $this->di['logger']->info('Create VM config Template %s', $vm_config_template->id);
         return $vm_config_template;
     }
@@ -1189,7 +1183,7 @@ class Admin extends \Api_Abstract
     public function vm_template_delete($id)
     {
         $vm_config_template = $this->di['db']->findOne('service_proxmox_vm_config_template', 'id = ?', [$id]);
-        
+
         // TODO: Check if vm_config_template is used by any product
 
         $this->di['db']->trash($vm_config_template);
@@ -1230,10 +1224,10 @@ class Admin extends \Api_Abstract
         $lxc_config_template->created_at = date('Y-m-d H:i:s');
         $lxc_config_template->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($lxc_config_template);
-        
+
         $this->di['db']->store($lxc_config_template);
 
-        
+
         $this->di['logger']->info('Create LXC config Template %s', $lxc_config_template->id);
         return true;
     }
@@ -1320,7 +1314,7 @@ class Admin extends \Api_Abstract
         $ip_range->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($ip_range);
 
-        
+
         $this->di['logger']->info('Create IP Network %s', $ip_range->id);
         return true;
     }
@@ -1397,7 +1391,7 @@ class Admin extends \Api_Abstract
         $client_network->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client_network);
 
-        
+
         $this->di['logger']->info('Create Client Network %s', $client_network->id);
         return true;
     }
@@ -1451,7 +1445,7 @@ class Admin extends \Api_Abstract
     /* ########################################  Permissions  ############################################ */
     /* ################################################################################################### */
 
-   
+
     /* ################################################################################################### */
     /* ########################################  Maintenance  ############################################ */
     /* ################################################################################################### */
@@ -1508,5 +1502,4 @@ class Admin extends \Api_Abstract
         $config = $this->di['mod_config']('Serviceproxmox');
         return $config['version'];
     }
-
 } // EOF

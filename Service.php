@@ -20,12 +20,9 @@ namespace Box\Mod\Serviceproxmox;
 
 require_once 'pve2_api.class.php';
 
-use PhpZip\Exception\ZipException;
-use PhpZip\ZipFile;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
-use \Model_Extension;
 use PDO;
 
 /**
@@ -110,11 +107,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		ksort($pmxbackup_file);
 		$pmxbackup_file = array_reverse($pmxbackup_file);
 		$pmxbackup_file = reset($pmxbackup_file);
-		
+
 		// if pmxbackup_file is not empty, restore the sql dump to database
 		if (!empty($pmxbackup_file)) {
 			// Load the backup
-			$dump = file_get_contents(PATH_ROOT.'/pmxconfig/'.$pmxbackup_file);
+			$dump = file_get_contents(PATH_ROOT . '/pmxconfig/' . $pmxbackup_file);
 
 			// Check if dump is not empty
 			if (!empty($dump)) {
@@ -123,7 +120,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 				$version_line = strtok($dump, "\n");
 
 				// Get version number from line
-				$dump_version = str_replace('-- Proxmox module version: ', '', $version_line);	
+				$dump_version = str_replace('-- Proxmox module version: ', '', $version_line);
 				$dump = str_replace($version_line . "\n", '', $dump);
 
 				// Get db config
@@ -133,7 +130,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
 				try {
 					// Create PDO instance
-					$pdo = new PDO('mysql:host=localhost;dbname='.$db_name, $db_user, $db_password);
+					$pdo = new PDO('mysql:host=localhost;dbname=' . $db_name, $db_user, $db_password);
 					$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 					// If version number in dump is smaller than current version number, restore dump and run upgrade function
@@ -166,8 +163,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 					throw new \Box_Exception('Error during restoration process: ' . $e->getMessage());
 				}
 			}
-		} else 
-		{
+		} else {
 			// Get a list of all SQL migration files
 			$migrations = glob(__DIR__ . '/migrations/*.sql');
 
@@ -215,15 +211,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 				exit(1);
 			}
 
-		
-		// Create table for vm 
+
+			// Create table for vm 
 		}
 		// add default values to module config table:
 		// cpu_overprovisioning, ram_overprovisioning, storage_overprovisioning, avoid_overprovision, no_overprovision, use_auth_tokens
 		// example: $extensionService->setConfig(['ext' => 'mod_massmailer', 'limit' => '2', 'interval' => '10', 'test_client_id' => 1]);
 		$extensionService = $this->di['mod_service']('extension');
 		$extensionService->setConfig(['ext' => 'mod_serviceproxmox', 'cpu_overprovisioning' => '1', 'ram_overprovisioning' => '1', 'storage_overprovisioning' => '1', 'avoid_overprovision' => '0', 'no_overprovision' => '1', 'use_auth_tokens' => '1']);
-		
+
 
 		return true;
 	}
@@ -274,46 +270,46 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		// read current module version from manifest.json
 		$manifest = json_decode(file_get_contents(__DIR__ . '/manifest.json'), true);
 		$current_version = $manifest['version'];
-	
+
 		// read migrations directory and find all files between current version and previous version
 		$migrations = glob(__DIR__ . '/migrations/*.sql');
-	
+
 		// sort migrations by version number (Filenames: 0.0.1.sql, 0.0.2.sql etc.)
 		usort($migrations, function ($a, $b) {
 			return version_compare(basename($a, '.sql'), basename($b, '.sql'));
 		});
-	
+
 		// Get db config
 		$db_user = $this->di['config']['db']['user'];
 		$db_password = $this->di['config']['db']['password'];
 		$db_name = $this->di['config']['db']['name'];
-	
+
 		// Create PDO instance
-		$pdo = new PDO('mysql:host=localhost;dbname='.$db_name, $db_user, $db_password);
+		$pdo = new PDO('mysql:host=localhost;dbname=' . $db_name, $db_user, $db_password);
 		$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-	
+
 		foreach ($migrations as $migration) {
 			// get version from filename
 			// log to debug.log
-			error_log('found migration: ' . $migration );
+			error_log('found migration: ' . $migration);
 			$filename = basename($migration, '.sql');
 			$version = str_replace('_', '.', $filename);
-	
+
 			// check if version is between previous and current version
 			error_log('version: ' . $version . ' previous_version: ' . $previous_version . ' current_version: ' . $current_version);
-			
+
 			// Apply migration if version is larger than previous version and smaller or equal to current version
 			error_log('version_compare: ' . version_compare($version, $previous_version, '>') . ' version_compare2: ' . version_compare($version, $current_version, '<='));
-			
+
 			if (version_compare($version, $previous_version, '>') && version_compare($version, $current_version, '<=')) {
-				error_log('applying migration: ' . $migration );
-				
+				error_log('applying migration: ' . $migration);
+
 				// run migration
 				$migration_sql = file_get_contents($migration);
 				$pdo->exec($migration_sql);
 			}
 		}
-	
+
 		return true;
 	}
 
@@ -347,7 +343,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 			'service_proxmox_ip_range'
 
 		);
-		
+
 		foreach ($tables as $table) {
 			$sql = "SELECT table_comment FROM INFORMATION_SCHEMA.TABLES WHERE table_schema='" . DB_NAME . "' AND table_name='" . $table . "'";
 			$result = $this->di['db']->query($sql);
@@ -357,7 +353,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 				// if not, throw error to inform user about inconsistent database status
 				throw new \Box_Exception('Database migration is not up to date. Please run the database migration script.');
 			}
-			
 		}
 		return true;
 	}
@@ -385,16 +380,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		} else {
 			$filename = '/pmxconfig/proxmox_backup_' . date('Y-m-d_H-i-s') . '.sql';
 		}
-	
+
 		// get db config
 		$db_user = $this->di['config']['db']['user'];
 		$db_password = $this->di['config']['db']['password'];
 		$db_name = $this->di['config']['db']['name'];
-	
+
 		try {
 			// create PDO instance
-			$pdo = new PDO('mysql:host=localhost;dbname='.$db_name, $db_user, $db_password);
-	
+			$pdo = new PDO('mysql:host=localhost;dbname=' . $db_name, $db_user, $db_password);
+
 			// List of tables to backup
 			$tables = array(
 				'service_proxmox_server',
@@ -412,42 +407,48 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 				'service_proxmox_qemu_template',
 				'service_proxmox_client_vlan',
 				'service_proxmox_ip_range',
- 				'service_proxmox_ipadress',/*
+				'service_proxmox_ipadress',/*
 				'service_proxmox_ipam_settings' */
 			);
-	
+
 			// Initialize backup variable
 			$backup = '';
-	
+
 			// Loop through tables and create SQL statement
-			foreach($tables as $table) {
-				$result = $pdo->query('SELECT * FROM '.$table);
+			foreach ($tables as $table) {
+				$result = $pdo->query('SELECT * FROM ' . $table);
 				$num_fields = $result->columnCount();
-	
-				$backup .= 'DROP TABLE IF EXISTS '.$table.';';
-				$row2 = $pdo->query('SHOW CREATE TABLE '.$table)->fetch(PDO::FETCH_NUM);
-				$backup .= "\n\n".$row2[1].";\n\n";
-	
+
+				$backup .= 'DROP TABLE IF EXISTS ' . $table . ';';
+				$row2 = $pdo->query('SHOW CREATE TABLE ' . $table)->fetch(PDO::FETCH_NUM);
+				$backup .= "\n\n" . $row2[1] . ";\n\n";
+
 				while ($row = $result->fetch(PDO::FETCH_NUM)) {
-					$backup .= 'INSERT INTO '.$table.' VALUES(';
-					for ($j=0; $j<$num_fields; $j++) {
+					$backup .= 'INSERT INTO ' . $table . ' VALUES(';
+					for ($j = 0; $j < $num_fields; $j++) {
 						$row[$j] = addslashes($row[$j]);
-						$row[$j] = preg_replace("/\n/","\\n",$row[$j]);
-						if (isset($row[$j])) { $backup .= '"'.$row[$j].'"'; } else { $backup .= '""'; }
-						if ($j<($num_fields-1)) { $backup .= ','; }
+						$row[$j] = preg_replace("/\n/", "\\n", $row[$j]);
+						if (isset($row[$j])) {
+							$backup .= '"' . $row[$j] . '"';
+						} else {
+							$backup .= '""';
+						}
+						if ($j < ($num_fields - 1)) {
+							$backup .= ',';
+						}
 					}
 					$backup .= ");\n";
 				}
 				$backup .= "\n\n\n";
 			}
-	
+
 			// Save to file
 			$handle = fopen(PATH_ROOT . $filename, 'w+');
 			fwrite($handle, $backup);
 			fclose($handle);
 			// create PDO instance
-			$pdo = new PDO('mysql:host=localhost;dbname='.$db_name, $db_user, $db_password);
-	
+			$pdo = new PDO('mysql:host=localhost;dbname=' . $db_name, $db_user, $db_password);
+
 			// List of tables to backup
 			$tables = array(
 				'service_proxmox_server',
@@ -466,32 +467,38 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 				'service_proxmox_client_vlan',
 				'service_proxmox_ip_range'
 			);
-	
+
 			// Initialize backup variable
 			$backup = '';
-	
+
 			// Loop through tables and create SQL statement
-			foreach($tables as $table) {
-				$result = $pdo->query('SELECT * FROM '.$table);
+			foreach ($tables as $table) {
+				$result = $pdo->query('SELECT * FROM ' . $table);
 				$num_fields = $result->columnCount();
-	
-				$backup .= 'DROP TABLE IF EXISTS '.$table.';';
-				$row2 = $pdo->query('SHOW CREATE TABLE '.$table)->fetch(PDO::FETCH_NUM);
-				$backup .= "\n\n".$row2[1].";\n\n";
-	
+
+				$backup .= 'DROP TABLE IF EXISTS ' . $table . ';';
+				$row2 = $pdo->query('SHOW CREATE TABLE ' . $table)->fetch(PDO::FETCH_NUM);
+				$backup .= "\n\n" . $row2[1] . ";\n\n";
+
 				while ($row = $result->fetch(PDO::FETCH_NUM)) {
-					$backup .= 'INSERT INTO '.$table.' VALUES(';
-					for ($j=0; $j<$num_fields; $j++) {
+					$backup .= 'INSERT INTO ' . $table . ' VALUES(';
+					for ($j = 0; $j < $num_fields; $j++) {
 						$row[$j] = addslashes($row[$j]);
-						$row[$j] = preg_replace("/\n/","\\n",$row[$j]);
-						if (isset($row[$j])) { $backup .= '"'.$row[$j].'"'; } else { $backup .= '""'; }
-						if ($j<($num_fields-1)) { $backup .= ','; }
+						$row[$j] = preg_replace("/\n/", "\\n", $row[$j]);
+						if (isset($row[$j])) {
+							$backup .= '"' . $row[$j] . '"';
+						} else {
+							$backup .= '""';
+						}
+						if ($j < ($num_fields - 1)) {
+							$backup .= ',';
+						}
 					}
 					$backup .= ");\n";
 				}
 				$backup .= "\n\n\n";
 			}
-	
+
 			// Save to file
 			$handle = fopen(PATH_ROOT . $filename, 'w+');
 			fwrite($handle, $backup);
@@ -499,7 +506,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		} catch (Exception $e) {
 			throw new \Box_Exception('Error during backup process: ' . $e->getMessage());
 		}
-	
+
 		// read current module version from manifest.json
 		$manifest = json_decode(file_get_contents(__DIR__ . '/manifest.json'), true);
 		$current_version = $manifest['version'];
@@ -520,10 +527,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 			$i++;
 		}
 		fclose($handle);
-	
+
 		return true;
 	}
-	
+
 
 	/**
 	 * Method to list all Proxmox backups
@@ -548,55 +555,55 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 	 * @return bool
 	 */
 	public function pmxbackuprestore($data)
-{
-    // get filename from $data and see if it exists using finder
-    $manifest = json_decode(file_get_contents(__DIR__ . '/manifest.json'), true);
-    $version = $manifest['version'];
-    //if the file exists, restore it
-    $dump = file_get_contents(PATH_ROOT.'/pmxconfig/'.$data['backup']);
-    // check if dump is not empty
-    if (!empty($dump)) {
-        // check version number in first line of dump format: 
-        // -- Proxmox module version: 0.0.5
-        // get first line of dump
-        $version_line = strtok($dump, "\n");
-        // get version number from line
-        $dump_version = str_replace('-- Proxmox module version: ', '', $version_line);
-        $dump = str_replace($version_line . "\n", '', $dump);
+	{
+		// get filename from $data and see if it exists using finder
+		$manifest = json_decode(file_get_contents(__DIR__ . '/manifest.json'), true);
+		$version = $manifest['version'];
+		//if the file exists, restore it
+		$dump = file_get_contents(PATH_ROOT . '/pmxconfig/' . $data['backup']);
+		// check if dump is not empty
+		if (!empty($dump)) {
+			// check version number in first line of dump format: 
+			// -- Proxmox module version: 0.0.5
+			// get first line of dump
+			$version_line = strtok($dump, "\n");
+			// get version number from line
+			$dump_version = str_replace('-- Proxmox module version: ', '', $version_line);
+			$dump = str_replace($version_line . "\n", '', $dump);
 
-        // if version number in dump is smaller than current version number, restore dump and run upgrade function
-        if ($dump_version == $version) {
-            // get db config
-            $db_user = $this->di['config']['db']['user'];
-            $db_password = $this->di['config']['db']['password'];
-            $db_name = $this->di['config']['db']['name'];
+			// if version number in dump is smaller than current version number, restore dump and run upgrade function
+			if ($dump_version == $version) {
+				// get db config
+				$db_user = $this->di['config']['db']['user'];
+				$db_password = $this->di['config']['db']['password'];
+				$db_name = $this->di['config']['db']['name'];
 
-            try {
-                // create PDO instance
-                $pdo = new PDO('mysql:host=localhost;dbname='.$db_name, $db_user, $db_password);
-                $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+				try {
+					// create PDO instance
+					$pdo = new PDO('mysql:host=localhost;dbname=' . $db_name, $db_user, $db_password);
+					$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-                // split the dump into an array by each sql command
-                $query_array = explode(";", $dump);
+					// split the dump into an array by each sql command
+					$query_array = explode(";", $dump);
 
-                // execute each sql command
-                foreach ($query_array as $query) {
-                    if (!empty(trim($query))) {
-                        $pdo->exec($query);
-                    }
-                }
-                
-                return true;
-            } catch (Exception $e) {
-                throw new \Box_Exception('Error during restoration process: ' . $e->getMessage());
-            }
-        } else {
-            throw new \Box_Exception("The sql dump file (V: $dump_version) is not compatible with the current module version (V: $version). Please check the file.", null);
-        }
-    } else {
-        throw new \Box_Exception("The sql dump file is empty. Please check the file.", null);
-    }
-}
+					// execute each sql command
+					foreach ($query_array as $query) {
+						if (!empty(trim($query))) {
+							$pdo->exec($query);
+						}
+					}
+
+					return true;
+				} catch (Exception $e) {
+					throw new \Box_Exception('Error during restoration process: ' . $e->getMessage());
+				}
+			} else {
+				throw new \Box_Exception("The sql dump file (V: $dump_version) is not compatible with the current module version (V: $version). Please check the file.", null);
+			}
+		} else {
+			throw new \Box_Exception("The sql dump file is empty. Please check the file.", null);
+		}
+	}
 
 	// Create function that runs with cron job hook
 	// This function will run every 5 minutes and update all servers
@@ -632,7 +639,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 	public function create($order)
 	{
 		$config = json_decode($order->config, 1);
-		
+
 		$product = $this->di['db']->getExistingModelById('Product', $order->product_id, 'Product not found');
 
 		$model                	= $this->di['db']->dispense('service_proxmox');
@@ -852,5 +859,4 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		// return tags
 		return $tags;
 	}
-
 }

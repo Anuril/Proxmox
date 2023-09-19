@@ -26,7 +26,7 @@ trait ProxmoxTemplates
 	/* ################################################################################################### */
 	/* ####################################  VM Template Mgmt  ########################################### */
 	/* ################################################################################################### */
-	
+
 	// Function that gets all the VM templates and returns them as an array
 	public function get_vmtemplates()
 	{
@@ -66,7 +66,7 @@ trait ProxmoxTemplates
 	}
 
 	// Function that gets a lxc config template by id
-	public function get_lxc_conftempl ($id)
+	public function get_lxc_conftempl($id)
 	{
 		// get the lxc config template from the service_proxmox_lxc_config_template table
 		$template = $this->di['db']->getExistingModelById('service_proxmox_lxc_config_template', $id);

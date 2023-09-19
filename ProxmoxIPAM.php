@@ -26,7 +26,7 @@ trait ProxmoxIPAM
 	/* ################################################################################################### */
 	/* ####################################  IPAM Management   ########################################### */
 	/* ################################################################################################### */
-	
+
 	// Function that gets all the VM templates and returns them as an array
 	public function get_ip_ranges()
 	{
@@ -51,7 +51,7 @@ trait ProxmoxIPAM
 		// Fill in the client name
 		foreach ($vlans as $vlan) {
 			$client = $this->di['db']->getExistingModelById('client', $vlan->client_id);
-			$vlan->client_name = $client->first_name." ".$client->last_name;
+			$vlan->client_name = $client->first_name . " " . $client->last_name;
 		}
 
 		return $vlans;
@@ -60,7 +60,4 @@ trait ProxmoxIPAM
 	/* ################################################################################################### */
 	/* ###################################  Manage PVE Network   ######################################### */
 	/* ################################################################################################### */
-	
-	
-
 }

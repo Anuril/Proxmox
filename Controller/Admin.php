@@ -203,6 +203,4 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $backup = $api->Serviceproxmox_proxmox_backup_config('backup');
         return $app->redirect('extension/settings/serviceproxmox');
     }
-
 }
-

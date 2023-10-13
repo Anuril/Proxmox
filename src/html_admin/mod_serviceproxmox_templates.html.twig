@@ -388,6 +388,80 @@
                             </div>
                         </div>
                     </div>
+                    <div class="card-body">
+                            <!-- tabs for network cards -->
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link active" href="#tab-vm-network" data-bs-toggle="tab">
+                                    {{ 'Network Adapters' | trans }}
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation" id='tab-new-vm-nic-btn'>
+                                <a class="nav-link" href="#tab-new-vm-nic" data-bs-toggle="tab" >
+                                    <svg class="icon me-2">
+                                        <use xlink:href="#plus" />
+                                    </svg>
+                                    {{ 'New NIC' | trans }}
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="tab-vm-network" role="tabpanel">
+                                <div class="card-body">                                            
+                                    <div class="table-responsive">
+                                        <table class="table card-table table-vcenter table-striped table-responsive text-nowrap">
+                                            <thead>
+                                                <th>
+                                                    <td>Adapter Model</td>
+                                                    <td>Adress Range type</td>
+                                                    <td></td>
+                                                </th>
+                                            </thead>
+                                            <tbody id='template-network-list'>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-content">
+                            <div class="tab-pane fade " id="tab-new-vm-nic" role="tabpanel">
+                                <div class="card-body">                                            
+                                <form id='vm-storage-create-form' method="post" action="admin/serviceproxmox/vm_template_create" class="api-form" data-api-redirect="{{ 'serviceproxmox/templates'|alink }}">
+                                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
+                                    {% set nicmodels = admin.serviceproxmox_nic_model_get_list() %}
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-3 col-form-label">
+                                            {{ 'NIC Model' | trans }}:                                                                    
+                                        </label>
+                                        <div class="col">
+                                            <select name="nicmodel" id="nicmodel" class="form-select">
+                                                {% for key, nicmodel in nicmodels %}
+                                                    <option value="{{ key }}">{{ nicmodel }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-3 col-form-label">
+                                            {{ 'Network Type' | trans }}:                                                                    
+                                        </label>
+                                        <div class="col-md-6">
+                                            <div class="col">
+                                            <input type="text" name="networkTypeTags[]" id="networkTypeTags" multiple>
+                                         </div>
+                                      </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <!-- Button to add the new nic to the list -->
+                                    <button type="button" class="btn btn-primary" id='add-nic-btn'>Add NIC</button>
+                                </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                     <div class="card-footer text-end">
                         <input type="submit" value="{{ 'Save VM Template' | trans }}" class="btn btn-primary">
                     </div>
@@ -859,18 +933,29 @@
         }
 
         $(document).ready(function() {
-            var Type = "storage";
-            var select = new TomSelect('#storageTypeTags', {
+            var storageType = "storage";
+            var storageselect = new TomSelect('#storageTypeTags', {
                 plugins: ['remove_button'],
                 create: true,
                 delimiter: ',',
             });
 
-            getTagsForType(Type, function(options) {
-                select.addOption(options);
+            getTagsForType(storageType, function(options) {
+                storageselect.addOption(options);
+            });
+            var networkType = "network";
+            var networkselect = new TomSelect('#networkTypeTags', {
+                plugins: ['remove_button'],
+                create: true,
+                delimiter: ',',
+            });
+
+            getTagsForType(networkType, function(options) {
+                networkselect.addOption(options);
             });
 
             updateStorageTable();
+            updateNetworkTable();
         });
 
         function getTagsForType(Type, callback) {
@@ -894,26 +979,6 @@
             }, false);
         }
 
-        function getTagsForType(Type, callback) {
-            var options = [];
-            API.admin.post("serviceproxmox/service_get_tags", {
-                type: Type
-            }, function(response) {
-                for (var key in response) {
-                    if (response.hasOwnProperty(key)) {
-                        var option = {
-                            value: response[key].id,
-                            text: response[key].name
-                        };
-                        options.push(option);
-                    }
-                }
-                callback(options);
-            }, function(error) {
-                console.log('Error occurred while getting tags: ' + error);
-                callback(options);
-            }, false);
-        }
     </script>
 
 {% endblock %}

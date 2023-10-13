@@ -50,6 +50,6 @@ Temporary Items
 # =========================
 src/vendor/
 .phpdoc
-.vscode
+.vscode/*
 *.phar
 *.lock

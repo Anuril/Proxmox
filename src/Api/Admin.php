@@ -203,6 +203,23 @@ class Admin extends \Api_Abstract
         return $storage_controllers;
     }
 
+    /**
+     * Get list of storage controllers
+     * 
+     * @return array
+     */
+    public function nic_model_get_list()
+    {
+        // Return Array of storage controllers: 	
+        // e1000 | rtl8139 | virtio | vmxnet3
+        $storage_controllers = array(
+            'e1000' => 'Intel e1000',
+            'rtl8139' => 'Realtek RTL8139',
+            'virtio' => 'VirtIO (Paravirtualized)',
+            'vmxnet3' => 'VMWare VMXNET3',
+        );
+        return $storage_controllers;
+    }
     /** *
      * Get list of Active Services
      * 

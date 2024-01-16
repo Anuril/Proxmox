@@ -1,0 +1,919 @@
+{% import 'macro_functions.html.twig' as mf %}
+{% extends 'layout_default.html.twig' %}
+{% block meta_title %}
+    {{ 'Proxmox Configuration Templates' | trans }}
+{% endblock %}
+{% set active_menu = 'proxmox' %}
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">Proxmox Configuration Templates</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-vmtemplates" data-bs-toggle="tab">
+                {{ 'VM Config Templates' | trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new-vmtemplate" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New VM Template' | trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-lxctemplates" data-bs-toggle="tab">
+                {{ 'LXC Config Templates' | trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new-lxctemplate" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New LXC Template' | trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+        <a class="nav-link" href="#tab-appliance-templatevm" data-bs-toggle="tab">
+            {{ 'Appliances & Template VMs' | trans }}
+        </a>
+    </li>
+    </ul>
+
+    <div class="card">
+        <!-- ##############################################################################
+                                        List VM Templates
+             ############################################################################## -->
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tab-vmtemplates" role="tabpanel">
+                <div class="card-body">
+                    <h2>
+                        {{ 'VM Config Templates' | trans }}
+                    </h2>
+                </div>
+
+                {% set vmtemplates = admin.serviceproxmox_service_get_vmtemplates() %}
+                <div style="padding: 0.25rem 1.5rem">
+                    <strong>
+                        All VM Config Templates 
+                    </strong>
+                </div>
+                <table class="table card-table table-vcenter table-striped table-responsive text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>
+                                {{ 'Name' | trans }}
+                            </th>
+                            <th>
+                                {{ 'Description' | trans }}
+                            </th>
+                            <th>
+                                {{ 'CPU Cores' | trans }}
+                            </th>
+                            <th>
+                                {{ 'Memory' | trans }}
+                            </th>
+                            <th>
+                                {{ 'Storage' | trans }}
+                            </th>
+                            <th>
+                                {{ 'Created at' | trans }}
+                            </th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for template in vmtemplates %}
+                        <tr>
+                            <td>
+                                {{ template.name }} - 
+                                {% if template.state == 'draft' %}
+                                {% set statusClass = 'badge bg-secondary' %}
+                              {% elseif template.state == 'active' %}
+                                {% set statusClass = 'badge bg-success' %}
+                              {% elseif template.state == 'inactive' %}
+                                {% set statusClass = 'badge bg-danger' %}
+                              {% endif %}
+                              
+                              <span class="{{ statusClass }}" style="color: #FFF;">
+                                {{ template.state|capitalize }}
+                              </span> 
+                            </td>
+                            <td>
+                                {{ template.description }}
+                            </td>
+                            <td>
+                                {{ template.cores }}
+                            </td>
+                            <td>
+                                {{ template.memory }} GB
+                            </td>
+                            <td>
+                                {# {% set content = template.storage|split('\n') %}
+                                {% for line in content %}
+                                {{ line }}
+                                <br>
+                                {% endfor %} #}
+                            </td>
+                            <td>
+                                {{ template.created_at }}
+                            </td>
+
+                            <td>
+                                <a class="btn btn-icon" href="{{ '/serviceproxmox/templates/vm_config'|alink }}/{{ template.id }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#edit" />
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- ##############################################################################
+                                        Form to create a new VM Template 
+             ############################################################################## -->
+        <div class="tab-content">
+            <div class="tab-pane fade" id="tab-new-vmtemplate" role="tabpanel">
+                <div class="card-body">
+                    <form id='vm-create-form' method="post" action="admin/serviceproxmox/vm_template_create" class="api-form" data-api-redirect="{{ 'serviceproxmox/templates'|alink }}">
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
+                        <div class="mb-3 row">
+                            <label class="form-label col-3 col-form-label">
+                                {{ 'Name' | trans }}:    
+                            </label>
+                            <div class="col">
+                                <input class="form-control" type="text" id='vm-template-name' name="name" value="" required placeholder="{{ 'Unique name to identify this template' | trans }}">
+                            </div>
+                        </div>
+                        <div class="mb-3 row">
+                            <label class="form-label col-3 col-form-label">
+                                {{ 'Description' | trans }}:
+                            </label>
+                            <div class="col">
+                                <input class="form-control" type="text-area" name="description" value="" required placeholder="{{ 'Description' | trans }}">
+                            </div>
+                        </div>
+                        <div class="mb-3 row">
+                            <label class="form-label col-3 col-form-label">
+                                {{ 'CPU Cores' | trans }}:                                                                    
+                            </label>
+                            <div class="col-md-5">
+									<input class="form-range" type="range" name="cpu_cores" value="1" min="1" max="128" step="1" oninput="cpuOutput.value = this.value+' Core(s)';">
+                            </div>
+                            <div class="col-md-2">
+                                <output name="cpuOutput" for="cpu_cores">
+                                    1 Core(s)
+                                </output>
+                            </div>
+                        </div>
+                        <div class="mb-3 row">
+                            <label class="form-label col-3 col-form-label">
+                                {{ 'Memory' | trans }}:                                                                    
+                            </label>
+                            <div class="col-md-5">
+                                    <input class="form-range" type="range" name="vmmemory" value="1" min="1" max="128" step="1" oninput="vmmemoryOutput.value = this.value+' GB';">
+                            </div>
+                            <div class="col-md-2">
+                                <output name="vmmemoryOutput" for="vmmemory">
+                                    1 GB
+                                </output>
+                            </div>
+                        </div>
+                        <div class="mb-3 row">
+                            <label class="form-label col-3 col-form-label">
+                                {{ 'Ballooning' | trans }}:                                                                            
+                            </label>
+                            <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioBalloonYes" type="radio" name="balloon" value="1">
+                                <label class="form-check-label" for="radioBalloonYes">
+                                    {{ 'Yes' | trans }}
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioBalloonNo" type="radio" name="balloon" value="0" checked>
+                                <label class="form-check-label" for="radioBalloonNo">
+                                    {{ 'No' | trans }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3 row" id='balloon-size'>
+                            <label class="form-label col-3 col-form-label">
+                                {{ 'Ballooing Memory Size' | trans }}:                                                                                    
+                            </label>
+                            <div class="col-md-5">
+                                    <input class="form-range" type="range" name="balloon_size" value="1" min="1" max="128" step="1" oninput="memoryOutput.value = this.value+' GB';">
+                            </div>
+                            <div class="col-md-2">
+                                <output name="memoryOutput" for="balloon_size">
+                                    1 GB
+                                </output>
+                            </div>
+                        </div>
+                        <div class="mb-3 row">
+                            <label class="form-label col-3 col-form-label">
+                                {{ 'OS' | trans }}:
+                            </label>
+                            {% set os_list = admin.serviceproxmox_os_get_list() %}
+                            <div class="col">
+                                <select class="form-select" name="os">
+                                    {% for os in os_list %}
+                                    <option value="{{ os }}">{{ os }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3 row">
+                            <label class="form-label col-3 col-form-label">
+                                {{ 'Bios Type' | trans }}:
+                            </label>
+                            {% set bios_list = admin.serviceproxmox_bios_get_list() %}
+                            <div class="col">
+                                <select class="form-select" name="bios">
+                                    {% for bios in bios_list %}
+                                    <option value="{{ bios }}">{{ bios }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3 row">
+                            <label class="form-label col-3 col-form-label">
+                                {{ 'Start on boot' | trans }}:
+                            </label>
+                            <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioOnbootYes" type="radio" name="onboot" value="1" checked>
+                                <label class="form-check-label" for="radioOnbootYes">
+                                    {{ 'Yes' | trans }}
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioOnbootNo" type="radio" name="onboot" value="0">
+                                <label class="form-check-label" for="radioOnbootNo">
+                                    {{ 'No' | trans }}
+                                </label>
+                            </div>
+                        </div>
+
+                        </div>
+                        <div class="mb-3 row">
+                            <label class="form-label col-3 col-form-label">
+                                {{ 'Qemu Guest Agent' | trans }}:
+                            </label>
+                            <div class="col">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" id="radioAgentYes" type="radio" name="agent" value="1" checked>
+                                    <label class="form-check-label" for="radioAgentYes">
+                                        {{ 'Enabled' | trans }}
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" id="radioAgentNo" type="radio" name="agent" value="0">
+                                    <label class="form-check-label" for="radioAgentNo">
+                                        {{ 'Disabled' | trans }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                            <!-- tabs for storage and drives -->
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link active" href="#tab-vm-storage" data-bs-toggle="tab">
+                                    {{ 'Storage' | trans }}
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation" id='tab-new-vm-storage-btn'>
+                                <a class="nav-link" href="#tab-new-vm-storage" data-bs-toggle="tab" >
+                                    <svg class="icon me-2">
+                                        <use xlink:href="#plus" />
+                                    </svg>
+                                    {{ 'New Storage' | trans }}
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" href="#tab-vm-cdrom" data-bs-toggle="tab">
+                                    {{ 'Removable Storage' | trans }}
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" href="#tab-new-vm-cdrom" data-bs-toggle="tab">
+                                    <svg class="icon me-2">
+                                        <use xlink:href="#plus" />
+                                    </svg>
+                                    {{ 'New Removable Storage' | trans }}
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="tab-vm-storage" role="tabpanel">
+                                <div class="card-body">                                            
+                                    <div class="table-responsive">
+                                        <table class="table card-table table-vcenter table-striped table-responsive text-nowrap">
+                                            <thead>
+                                                <th>
+                                                    <td>Storage Type</td>
+                                                    <td>Size (GB)</td>
+                                                    <td>Controller</td>
+                                                    <td></td>
+                                                </th>
+                                            </thead>
+                                            <tbody id='template-storage-list'>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-content">
+                            <div class="tab-pane fade " id="tab-new-vm-storage" role="tabpanel">
+                                <div class="card-body">                                            
+                                <form id='vm-storage-create-form' method="post" action="admin/serviceproxmox/vm_template_create" class="api-form" data-api-redirect="{{ 'serviceproxmox/templates'|alink }}">
+                                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-3">Storage Type Tags:</label>
+                                        <div class="col">
+                                            <input type="text" name="storageTypeTags[]" id="storageTypeTags" multiple>
+                                        </div>
+                                    </div>
+                            
+                                
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-3 col-form-label">
+                                            {{ 'Size' | trans }}:                                                                    
+                                        </label>
+                                        <div class="col-md-5">
+                                                <input class="form-range" type="range" name="storage_size" id="storage_size" value="1" min="50" max="2000" step="10" oninput="storage_sizeOutput.value = this.value+' GB';">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <output name="storage_sizeOutput" for="storage_size">
+                                                50 GB
+                                            </output>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-3 col-form-label">
+                                            {{ 'Controller' | trans }}:                                                                    
+                                        </label>
+                                        {% set controllers = admin.serviceproxmox_storage_controller_get_list() %}
+                                        <div class="col">
+                                            <select name="controller" id="controller" class="form-select">
+                                                {% for key, controller in controllers %}
+                                                    <option value="{{ key }}">{{ controller }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <!-- Button to add the new storage to the list -->
+                                    <button type="button" class="btn btn-primary" id='add-storage-btn'>Add Storage</button>
+                                </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <input type="submit" value="{{ 'Save VM Template' | trans }}" class="btn btn-primary">
+                    </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+       <!-- ##############################################################################
+                                    List LXC Templates
+            ############################################################################## -->
+
+        {% set lxctemplates = admin.serviceproxmox_get_lxc_config_template() %}
+        <div class="tab-content">
+            <div class="tab-pane fade show" id="tab-lxctemplates" role="tabpanel">
+                <div class="card-body">
+                    <h2>
+                        {{ 'LXC Config Templates' | trans }}
+                    </h2>
+                </div>
+
+                <div style="padding: 0.25rem 1.5rem">
+                    <strong>
+                        All LXC Config Templates 
+                    </strong>
+                </div>
+                <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>
+                                {{ 'id' | trans }}
+                            </th>
+                            <th>
+                                {{ 'Template' | trans }}
+                            </th>
+                            <th>
+                                {{ 'CPU Cores' | trans }}
+                            </th>
+                            <th>
+                                {{ 'Memory' | trans }}
+                            </th>
+                            <th>
+                                {{ 'Storage' | trans }}
+                            </th>
+                            <th>
+                                {{ 'Created at' | trans }}
+                            </th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for template in lxctemplates %}
+                        <tr>
+                            <td>
+                                {{ template.id }}
+                            </td>
+                            <td>
+                                {{ template.ostemplate }}
+                            </td>
+                            <td>
+                                {{ template.cores }}
+                            </td>
+                            <td>
+                                {{ template.memory }}
+                            </td>
+                            <td>
+                                {{ template.storage }}
+                            </td>
+                            <td>
+                                {{ template.created_at }}
+                            </td>
+                            <td>
+                                <a class="btn btn-icon" href="{{ '/serviceproxmox/templates/lxc_config'|alink }}/{{ template.id }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#edit" />
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- ##############################################################################
+                                        Create new LXC Template
+             ############################################################################## -->
+             {% set lxc_appliances = admin.serviceproxmox_lxc_appliance_get_list() %}
+        <div class="tab-content">
+            <div class="tab-pane fade" id="tab-new-lxctemplate" role="tabpanel">
+                <div class="card-body">
+                    <form method="post" action="admin/serviceproxmox/lxc_template_create" class="api-form" data-api-redirect="{{ 'serviceproxmox/templates'|alink }}">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">
+                            {{ 'Name' | trans }}:    
+                        </label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="name" value="" required placeholder="{{ 'Unique name to identify this LXC template' | trans }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">
+                            {{ 'Description' | trans }}:
+                        </label>
+                        <div class="col">
+                            <input class="form-control" type="text-area" name="description" value="" required placeholder="{{ 'Description' | trans }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">
+                            {{ 'CPU Cores' | trans }}:                                                                    
+                        </label>
+                        <div class="col-md-5">
+                                <input class="form-range" type="range" name="cpu_cores" value="1" min="1" max="128" step="1" oninput="cpuOutput.value = this.value+' Core(s)';">
+                        </div>
+                        <div class="col-md-2">
+                            <output name="cpuOutput" for="cpu_cores">
+                                1 Core(s)
+                            </output>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">
+                            {{ 'Memory' | trans }}:                                                                    
+                        </label>
+                        <div class="col-md-5">
+                                <input class="form-range" type="range" name="memory" value="1" min="1" max="128" step="1" oninput="memoryOutput.value = this.value+' GB';">
+                        </div>
+                        <div class="col-md-2">
+                            <output name="memoryOutput" for="memory">
+                                1 GB
+                            </output>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">
+                            {{ 'Swap Memory Size' | trans }}:                                                                                    
+                        </label>
+                        <div class="col-md-5">
+                                <input class="form-range" type="range" name="swap" value="1" min="1" max="16384" step="1" oninput="swapOutput.value = this.value+' MB';">
+                        </div>
+                        <div class="col-md-2">
+                            <output name="swapOutput" for="swap">
+                                1 GB
+                            </output>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">
+                            {{ 'OS Template' | trans }}:
+                        </label>
+                        <div class="col">
+                            <select class="form-select" name="ostemplate">
+                                {% for lxc_appliance in lxc_appliances %}
+                                <option value="{{ lxc_appliance.id }}">{{ lxc_appliance.headline }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">
+                            {{ 'Start on boot' | trans }}:
+                        </label>
+                        <div class="col">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" id="radioOnbootYes" type="radio" name="onboot" value="1" checked>
+                            <label class="form-check-label" for="radioOnbootYes">
+                                {{ 'Yes' | trans }}
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" id="radioOnbootNo" type="radio" name="onboot" value="0">
+                            <label class="form-check-label" for="radioOnbootNo">
+                                {{ 'No' | trans }}
+                            </label>
+                        </div>
+                    </div>
+                    <input type="submit" value="{{ 'Save VM Template' | trans }}" class="btn btn-primary">
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- ##############################################################################
+                                List LXC Appliances & Template VMs
+        ############################################################################## -->
+        {% set lxc_appliances = admin.serviceproxmox_lxc_appliance_get_list() %}
+        <div class="tab-content">
+        <div class="tab-pane fade show" id="tab-appliance-templatevm" role="tabpanel">
+            <div class="card-body">
+                <h2>
+                    {{ 'LXC Appliances' | trans }}
+                </h2>
+            </div>
+            <div class="card-body">
+                <!-- function to update all lxc appliances -->
+                <a class="btn btn-icon api-link" href="{{ 'api/admin/serviceproxmox/pull_lxc_appliances'|link({ 'CSRFToken': CSRFToken }) }}" title="{{ 'Get LXC Appliances' | trans }}" data-api-msg="{{ 'LXC Appliances Updated' | trans }}">
+                    <svg class="icon">
+                        <use xlink:href="#download"/>
+                    </svg>
+                </a>
+            </div>
+            <div class="card-body">
+                <div style="padding: 0.25rem 1.5rem">
+                    <strong>
+                        All Template VMs
+                    </strong>
+                </div>
+                {% set qemu_templates = admin.serviceproxmox_service_get_qemutemplates() %}
+                <table class="table card-table table-vcenter table-striped table-responsive text-nowrap">
+                    <thead>
+                    <tr>
+                        <th>
+                            {{ 'VM ID' | trans }}
+                        </th>
+                        <th>
+                            {{ 'Server' | trans }}
+                        </th>
+                        <th>
+                            {{ 'VM Name' | trans }}
+                        </th>
+                        <th class="w-1"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        {% for qemu_template in qemu_templates %}
+                        <tr>
+                            <td>
+                                {{ qemu_template.vmid }}
+                            </td>
+                            <td>
+                                {{ qemu_template.server_name }}
+                            </td>
+                            <td>
+                                {{ qemu_template.name }}
+                            </td>
+                            <td>
+                                <!-- TODO: Make this button open a Modal to select the Server & Storage where it should be stored -->
+                                <a class="btn btn-icon" href=""> 
+                                    <svg class="icon">
+                                        <use xlink:href="#eye" />
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-body">
+                <div style="padding: 0.25rem 1.5rem">
+                    <strong>
+                        All LXC Appliances 
+                    </strong>
+                </div>
+                <table class="table card-table table-vcenter table-striped table-responsive text-nowrap">
+                    <thead>
+                    <tr>
+                        <th>
+                            {{ 'Type' | trans }}
+                        </th>
+                        <th>
+                            {{ 'Description' | trans }}
+                        </th>
+                        <th>
+                            {{ 'Architecture' | trans }}
+                        </th>
+                        <th>
+                            {{ 'Version' | trans }}
+                        </th>
+                        <th class="w-1"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        {% for lxc_appliance in lxc_appliances %}
+                        <tr>
+                            <td>
+                                {{ lxc_appliance.type }}
+                            </td>
+                            <td>
+                                {{ lxc_appliance.description }}
+                            </td>
+                            <td>
+                                {{ lxc_appliance.architecture }}
+                            </td>
+                            <td>
+                                {{ lxc_appliance.version }}
+                            </td>
+                            <td>
+                                <!-- TODO: Make this button open a Modal to select the Server & Storage where it should be stored -->
+                                <a class="btn btn-icon" href=""> 
+                                    <svg class="icon">
+                                        <use xlink:href="#download" />
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+{% endblock %}
+{% block js %}
+    <script src="{{ "Api/API.js?v=#{guest.system_version}" | library_url }}"></script>
+    <script>
+        var balloonyes = document.getElementById('radioBalloonYes');
+        var balloono = document.getElementById('radioBalloonNo');
+        var balloon_size = document.getElementById('balloon-size');
+        document.getElementById('balloon-size').hidden = true;
+
+        document.getElementById('radioBalloonYes').addEventListener('click', function() {
+            if (document.getElementById('radioBalloonYes').checked && !document.getElementById('radioBalloonNo').checked) {
+                document.getElementById('balloon-size').hidden = false;
+            } else if (!document.getElementById('radioBalloonYes').checked && document.getElementById('radioBalloonNo').checked) {
+                document.getElementById('balloon-size').hidden = true;
+            }
+        });
+        document.getElementById('radioBalloonNo').addEventListener('click', function() {
+            if (document.getElementById('radioBalloonYes').checked && !document.getElementById('radioBalloonNo').checked) {
+                document.getElementById('balloon-size').hidden = false;
+            } else if (!document.getElementById('radioBalloonYes').checked && document.getElementById('radioBalloonNo').checked) {
+                document.getElementById('balloon-size').hidden = true;
+            }
+        })
+
+        document.getElementById('vm-template-name').addEventListener('change', function() {
+
+            if (document.getElementById('vm-template-id') == null) {
+                saveTemplateAsDraft();
+            }
+        });
+
+        document.getElementById('add-storage-btn').addEventListener('click', function() {
+            saveStorage();
+        });
+
+        function saveStorage() {
+
+            var template_id_v = document.getElementById('vm_config_template_id');
+            var storage_size_v = document.getElementById('storage_size');
+            var storage_controller_v = document.getElementById('controller');
+            var storage_type_tags_v = document.getElementById('storageTypeTags');
+
+            var data = {
+                template_id: template_id_v.value,
+                storage_size: storage_size_v.value,
+                storage_controller: storage_controller_v.value,
+                storage_type_tags: storage_type_tags_v.value
+            };
+
+            API.admin.post('serviceproxmox/vm_config_template_storage_create', data, (response) => {
+                updateStorageTable()
+            }, (response) => {
+                console.log('Error occurred while saving storage: ' + response);
+            });
+
+        }
+
+        function saveTemplateAsDraft(template) {
+            var template_name = document.getElementById('vm-template-name').value;
+            API.admin.post('serviceproxmox/vm_config_template_create', {
+                    name: template_name
+                }, (response) => {
+                    var vm_config_template_new = response;
+                    var input = document.createElement("input");
+                    input.setAttribute("type", "hidden");
+                    input.setAttribute("name", "vm_config_template_id");
+                    input.setAttribute("id", "vm_config_template_id");
+                    input.setAttribute("value", vm_config_template_new.id);
+                    document.getElementById("vm-create-form").appendChild(input);
+                    document.getElementById("vm-template-name").setAttribute("value", vm_config_template_new.name);
+                    document.getElementById("vm-create-form").setAttribute("action", "/index.php?_url=/admin/serviceproxmox/vm_config_template_update/" + vm_config_template_new.id);
+                },
+                error => {
+                    console.log('Error occurred while saving storage: ' + response);
+                    }
+            )
+        };
+
+        function deleteStorage(storageId) {
+            API.admin.post(
+                'serviceproxmox/vm_config_template_delete_storage', {
+                    id: storageId
+                },
+                () => {
+                    updateStorageTable(); 
+                },
+                handleError
+            );
+        }
+
+        function updateStorageTable() {
+            const templateIdElem = document.getElementById('vm_config_template_id');
+
+            if (!templateIdElem) {
+                console.error("Element with id 'vm_config_template_id' not found!");
+                return;
+            }
+
+            const templateId = templateIdElem.value;
+
+            API.admin.post(
+                'serviceproxmox/vm_config_template_get_storages', {
+                    id: templateId
+                },
+                populateTable,
+                handleError
+            );
+        }
+
+        function populateTable(response) {
+            tableBody.innerHTML = '';
+            const tableBody = document.getElementById("template-storage-list");
+            for (let key in response) {
+                if (response.hasOwnProperty(key)) {
+                    const storageData = response[key];
+                    const row = document.createElement("tr");
+                    row.id = "template-storage-list-row-" + storageData.id;
+                    tableBody.appendChild(row);
+
+                    row.appendChild(document.createElement("td"));
+
+                    appendCellToRow(row, storageData.id, "storage-name", storageData.storage_type);
+                    appendCellToRow(row, storageData.id, "storage-size", storageData.size + " GB");
+                    appendCellToRow(row, storageData.id, "storage-controller", storageData.controller);
+
+                    const actionsCell = appendCellToRow(row, storageData.id, "storage-actions", "");
+                    appendActionButton(actionsCell, "edit", storageData.id);
+                    appendActionButton(actionsCell, "delete", storageData.id);
+                }
+            }
+        }
+
+        function appendCellToRow(row, storageId, suffix, content) {
+            const cell = document.createElement("td");
+            cell.id = `template-storage-list-row-${storageId}-${suffix}`;
+            cell.innerHTML = content;
+            row.appendChild(cell);
+            return cell;
+        }
+
+        function appendActionButton(cell, actionType, storageId) {
+            const button = document.createElement("a");
+            button.className = "btn btn-icon";
+
+            if (actionType === "delete") {
+                button.href = "javascript:void(0)"; 
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    deleteStorage(storageId);
+                });
+            } else {
+                button.href = `/admin/serviceproxmox/vm_config_template_storage_edit/${storageId}`;
+            }
+
+            cell.appendChild(button);
+
+            const img = document.createElement("img");
+            img.className = "icon";
+            img.src = `assets/icons/${actionType}.svg`;
+            img.alt = `${actionType} icon`; 
+            button.appendChild(img);
+        }
+
+        function handleError(error) {
+            console.error("API Error:", error);
+        }
+
+        $(document).ready(function() {
+            var Type = "storage";
+            var select = new TomSelect('#storageTypeTags', {
+                plugins: ['remove_button'],
+                create: true,
+                delimiter: ',',
+            });
+
+            getTagsForType(Type, function(options) {
+                select.addOption(options);
+            });
+
+            updateStorageTable();
+        });
+
+        function getTagsForType(Type, callback) {
+            var options = [];
+            API.admin.post("serviceproxmox/service_get_tags", {
+                type: Type
+            }, function(response) {
+                for (var key in response) {
+                    if (response.hasOwnProperty(key)) {
+                        var option = {
+                            value: response[key].id,
+                            text: response[key].name
+                        };
+                        options.push(option);
+                    }
+                }
+                callback(options);
+            }, function(error) {
+                console.log('Error occurred while getting tags: ' + error);
+                callback(options);
+            }, false);
+        }
+
+        function getTagsForType(Type, callback) {
+            var options = [];
+            API.admin.post("serviceproxmox/service_get_tags", {
+                type: Type
+            }, function(response) {
+                for (var key in response) {
+                    if (response.hasOwnProperty(key)) {
+                        var option = {
+                            value: response[key].id,
+                            text: response[key].name
+                        };
+                        options.push(option);
+                    }
+                }
+                callback(options);
+            }, function(error) {
+                console.log('Error occurred while getting tags: ' + error);
+                callback(options);
+            }, false);
+        }
+    </script>
+
+{% endblock %}

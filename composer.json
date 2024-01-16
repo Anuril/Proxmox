@@ -1,0 +1,38 @@
+{
+    "name": "fossbilling/proxmox",
+    "description": "Proxmox Module for FOSSBilling",
+    "type": "project",
+    "require": {
+      "php": "^8.0|8.1|^8.2",
+      "pve2-api-client/pve2-api-client": "^1.0.2",
+        "symfony/finder": "^5.3"
+    },
+    "funding": [
+      {
+          "type": "opencollective",
+          "url": "https://opencollective.com/fossbilling"
+      },
+      {
+          "type": "github",
+          "url": "https://github.com/sponsors/FOSSBilling"
+      }
+  ],
+    "require-dev": {
+      "phpstan/extension-installer": "^1.2",
+      "phpstan/phpstan-deprecation-rules": "^1.1",
+      "phpunit/phpunit": "^9.6"
+    },
+    "license": "GPL 3.0",
+    "authors": [
+      {
+        "name": "Christoph Schläpfer",
+        "email": "chris+github@cleverly.ch"
+      }
+    ],
+    "config": {
+        "vendor-dir": "./src/vendor",
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        }
+    }
+}
